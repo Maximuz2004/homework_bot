@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 from functools import wraps
@@ -43,7 +42,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_PERIOD = 600
+RETRY_PERIOD = 6
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -78,7 +77,7 @@ ERROR_MESSAGES = {
         'KeyError': 'Отсутствует необходимый ключ "homeworks" в ответе API',
         'TypeError1': 'Ответ API не содержит словаря',
         'TypeError2': 'Неверный тип домашней работы. Тип полученной домашней '
-                     'работы: {type_hw}, должен быть list'
+                      'работы: {type_hw}, должен быть list'
     },
     'parse_status': {
         'KeyError1': 'В "homework" отсутствует ключ "homework_name"',
@@ -97,11 +96,10 @@ SUCCESSFUL_MESSAGES = {
     'no_new_status': 'Новые статусы в домашней работе отсутствуют'
 }
 
-message_cache = []
-
 
 def cache_mesage(func):
     """Декоратор для кэширования сообщений."""
+    message_cache = []
 
     @wraps(func)
     def wrapper(bot, message):
@@ -127,7 +125,7 @@ def check_tokens():
                        .format(lost_tokens=lost_tokens))
 
 
-#@cache_mesage
+# @cache_mesage
 def send_message(bot, message):
     """Отправляет сообщение в Телеграмм-чат."""
     try:
