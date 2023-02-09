@@ -56,25 +56,23 @@ SEND_MESSAGE_ERROR = ('Сбой при отправке сообщения: "{me
                       '- {error}')
 SUCCESSFUL_SENDING = 'Удачная отправка сообщения: "{message}" в Телеграм'
 CONNECTION_ERROR = ('Непредвиденная ошибка при запросе к API Практикума. '
-                    'Параметры запроса: {url=url}, {headers=headers}, '
-                    '{timestamp=timestamp}. Ошибка - {error}')
+                    'Параметры запроса: {url}, {headers}, '
+                    '{params}. Ошибка - {error}')
 SERVER_ACCESS_ERROR = ('Ошибка доступа к API Практикума. Параметры запроса: '
-                       '{url=url}, {headers=headers}, {timestamp=timestamp}. '
-                       'Статус.код: {status_code}')
+                       '{url}, {headers}, {params}. Статус код: {status_code}')
 SERVER_RESPONSE_ERROR = ('Отказ в обслуживании сервера Практикума. '
-                         'Параметры запроса: {url=url}, {headers=headers}, '
-                         '{timestamp=timestamp}. Сообщение сервера: {message}')
+                         'Параметры запроса: {url}, {headers}, '
+                         '{params}. Сообщение сервера: {message}')
 RESPONSE_TYPE_ERROR = ('Некорректный ответ от API. Получен {response_type}, '
                        'ожидался dict')
 NO_HOMEWORKS_ERROR = 'Отсутствует необходимый ключ "homeworks" в ответе API'
 HOMEWORKS_TYPE_ERROR = ('Неверный тип домашней работы. Тип полученной '
-                        'домашней работы: {type_hw}, должен быть list')
+                        'домашней работы: {received_type}, должен быть list')
 NON_HOMEWORK_NAME_ERROR = 'В "homework" отсутствует ключ "homework_name"'
 NON_HOMEWORK_STATUS = 'В "homework" отсутствует ключ "status"'
 UNKNOWN_HOMEWORK_STATUS = 'Неизвестный статус домашней работы: {status}'
 PROGRAM_CRASH_ERROR = 'Сбой в работе программы: {error}'
 PARSE_STATUS = 'Изменился статус проверки работы "{homework_name}". {verdict}'
-BOT_INIT_MESSAGE = 'Бот включен.'
 NO_NEW_STATUS_MESSAGE = 'Новые статусы в домашней работе отсутствуют'
 ERROR_KEYS_LIST = ['error', 'code']
 
@@ -135,8 +133,8 @@ def check_response(response):
         raise KeyError(NO_HOMEWORKS_ERROR)
     homeworks = response.get('homeworks')
     if not isinstance(homeworks, list):
-        type_hw = type(homeworks)
-        raise TypeError(HOMEWORKS_TYPE_ERROR.format(type_hw=type_hw))
+        raise TypeError(HOMEWORKS_TYPE_ERROR.format(
+            received_type=type(homeworks)))
     return homeworks
 
 
@@ -159,9 +157,7 @@ def main():
     """Основная логика работы бота."""
     check_tokens()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    send_message(bot, BOT_INIT_MESSAGE)
     timestamp = int(time.time())
-    current_message = ''
     last_message = ''
     while True:
         try:
@@ -172,14 +168,17 @@ def main():
                 logger.debug(current_message)
             else:
                 current_message = parse_status(homeworks[0])
-        except Exception as error:
-            current_message = PROGRAM_CRASH_ERROR.format(error=error)
-            logger.error(current_message)
-        finally:
             if current_message != last_message:
                 send_message(bot, current_message)
                 timestamp = response.get('current_date', timestamp)
                 last_message = current_message
+        except Exception as error:
+            current_message = PROGRAM_CRASH_ERROR.format(error=error)
+            logger.error(current_message)
+            if current_message != last_message:
+                send_message(bot, current_message)
+                last_message = current_message
+        finally:
             time.sleep(RETRY_PERIOD)
 
 
