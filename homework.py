@@ -176,8 +176,14 @@ def main():
             current_message = PROGRAM_CRASH_ERROR.format(error=error)
             logger.error(current_message)
             if current_message != last_message:
-                send_message(bot, current_message)
-                last_message = current_message
+                try:
+                    bot.send_message(TELEGRAM_CHAT_ID, current_message)
+                    last_message = current_message
+                except Exception as error:
+                    logger.exception(SEND_MESSAGE_ERROR.format(
+                        message=current_message,
+                        error=error
+                    ))
         finally:
             time.sleep(RETRY_PERIOD)
 
