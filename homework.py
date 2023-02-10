@@ -10,7 +10,6 @@ import telegram
 from dotenv import load_dotenv
 
 from exceptions import (
-    SendMessageError,
     ServerAccessError,
     ServerResponseError,
 )
@@ -91,12 +90,13 @@ def send_message(bot, message):
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.debug(SUCCESSFUL_SENDING.format(message=message))
+        return True
     except telegram.TelegramError as error:
         logger.exception(SEND_MESSAGE_ERROR.format(
             message=message,
             error=error
         ))
-        raise SendMessageError(error)
+        return False
 
 
 def get_api_answer(timestamp):
@@ -170,17 +170,13 @@ def main():
                 logger.debug(message)
             else:
                 message = parse_status(homeworks[0])
-            if message != last_message:
-                send_message(bot, message)
+            if message != last_message and send_message(bot, message):
                 timestamp = response.get('current_date', timestamp)
                 last_message = message
-        except SendMessageError as error:
-            logger.error(PROGRAM_CRASH_ERROR.format(error=error))
         except Exception as error:
             message = PROGRAM_CRASH_ERROR.format(error=error)
             logger.error(message)
-            if message != last_message:
-                send_message(bot, message)
+            if message != last_message and send_message(bot, message):
                 last_message = message
         finally:
             time.sleep(RETRY_PERIOD)
