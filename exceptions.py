@@ -6,3 +6,7 @@ class ServerAccessError(Exception):
 class ServerResponseError(Exception):
     """Ошибки в ответе от API Практикума"""
     pass
+
+class SendMessageError(Exception):
+    """Ошибка при отправке сообщения в Телеграмм"""
+    pass

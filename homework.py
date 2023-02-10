@@ -10,6 +10,7 @@ import telegram
 from dotenv import load_dotenv
 
 from exceptions import (
+    SendMessageError,
     ServerAccessError,
     ServerResponseError,
 )
@@ -95,6 +96,7 @@ def send_message(bot, message):
             message=message,
             error=error
         ))
+        raise SendMessageError(error)
 
 
 def get_api_answer(timestamp):
@@ -164,26 +166,22 @@ def main():
             response = get_api_answer(timestamp)
             homeworks = check_response(response)
             if not homeworks:
-                current_message = NO_NEW_STATUS_MESSAGE
-                logger.debug(current_message)
+                message = NO_NEW_STATUS_MESSAGE
+                logger.debug(message)
             else:
-                current_message = parse_status(homeworks[0])
-            if current_message != last_message:
-                send_message(bot, current_message)
+                message = parse_status(homeworks[0])
+            if message != last_message:
+                send_message(bot, message)
                 timestamp = response.get('current_date', timestamp)
-                last_message = current_message
+                last_message = message
+        except SendMessageError as error:
+            logger.error(PROGRAM_CRASH_ERROR.format(error=error))
         except Exception as error:
-            current_message = PROGRAM_CRASH_ERROR.format(error=error)
-            logger.error(current_message)
-            if current_message != last_message:
-                try:
-                    bot.send_message(TELEGRAM_CHAT_ID, current_message)
-                    last_message = current_message
-                except Exception as error:
-                    logger.exception(SEND_MESSAGE_ERROR.format(
-                        message=current_message,
-                        error=error
-                    ))
+            message = PROGRAM_CRASH_ERROR.format(error=error)
+            logger.error(message)
+            if message != last_message:
+                send_message(bot, message)
+                last_message = message
         finally:
             time.sleep(RETRY_PERIOD)
 
